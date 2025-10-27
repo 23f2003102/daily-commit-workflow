@@ -6,30 +6,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  commit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        # ... other parts of your job
-        with:
-          # Your change starts here:
-          commit_user_email: 23f2003102@ds.study.iitm.ac.in
-          commit_user_name: 'Daily Commit Bot' # Give the bot a name
-          # Your change ends here
+  steps:
+  # Step 1: Checks out your repository under $GITHUB_WORKSPACE
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      # Required for the script to push back to the repository
+      token: ${{ secrets.GITHUB_TOKEN }} 
 
-          commit_message: Automated daily commit: ${{ env.DATE }}
-          # other inputs like file_pattern or branch, if present
-          token: ${{ secrets.GITHUB_TOKEN }}  # ✅ allows push access
+  # Step 2: Creates/Updates a file to ensure there is a change to commit
+  - name: Create or Update Timestamp File
+    run: |
+      DATE_TIME=$(date +%Y-%m-%d\ %H:%M:%S)
+      FILE="last_daily_run.md"
+      echo "# Last Automated Daily Commit" > $FILE
+      echo "" >> $FILE
+      echo "This file is updated automatically every day." >> $FILE
+      echo "" >> $FILE
+      echo "Last run time (UTC): \`$DATE_TIME\`" >> $FILE
 
-      - name: Commit step - {{email}}
-        run: |
-          echo "TDSFU Daily run: $(date -u) TDSFU" >> daily-log.txt
+  # Step 3: Configure Git and perform the commit and push
+  - name: Commit and Push Changes with Specific Author
+    run: |
+      # 🚨 IMPORTANT: This sets the exact author name and email for the commit object 
+      git config --global user.email "23f2003102@ds.study.iitm.ac.in"
+      git config --global user.name "23f2003102"
 
-      - name: Git Commit and Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add daily-log.txt
-          git commit -m "Auto commit at $(date -u)" || echo "No changes to commit"
-          git push
+      # Check if there are any changes to commit (optional, but good practice)
+      if [ -z "$(git status --porcelain)" ]; then
+        echo "No changes to commit. Exiting."
+        exit 0
+      fi
+      
+      # Stage, commit, and push the changes
+      git add .
+      git commit -m "Automated daily commit: $(date +%Y-%m-%d)"
+      git push
