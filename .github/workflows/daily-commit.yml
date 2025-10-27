@@ -22,7 +22,7 @@ jobs:
       - name: Create Empty Commit
         run: |
           git config user.name "GitHub Actions Bot"
-          git config user.email "23f*@ds.study.iitm.ac.in"
+          git config user.email "23f2003102@ds.study.iitm.ac.in"
           git commit --allow-empty -m "Daily empty commit"
           git push
 
